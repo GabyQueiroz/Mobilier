@@ -815,62 +815,97 @@ function updateBudgetSummary() {
 // SISTEMA DE CEP E FRETE
 // ============================================
 
+
+// ============================================
+// SISTEMA DE CEP E FRETE (CORRIGIDO)
+// ============================================
+
 function checkCep() {
+    console.log('Função checkCep() iniciada');
+    
     const cepInput = document.getElementById('cep');
     const cepMessage = document.getElementById('cepMessage');
     
-    if (!cepInput || !cepMessage) return;
+    console.log('CEP input encontrado:', !!cepInput);
+    console.log('CEP message encontrado:', !!cepMessage);
+    
+    if (!cepInput) {
+        console.error('Elemento CEP não encontrado!');
+        showMessage('Erro: campo CEP não encontrado.', 'error');
+        return;
+    }
     
     let cep = cepInput.value.replace(/\D/g, '');
+    console.log('CEP digitado (somente números):', cep);
     
     if (cep.length !== 8) {
+        console.log('CEP inválido - tamanho incorreto:', cep.length);
         showCepMessage('CEP inválido. Digite um CEP com 8 dígitos.', 'error');
         freightValue = 0;
         updateBudgetSummary();
         return;
     }
     
-    // Formata CEP
+    // Formata CEP (XXXXX-XXX)
     cep = cep.substring(0, 5) + '-' + cep.substring(5);
     cepInput.value = cep;
+    console.log('CEP formatado:', cep);
     
     showCepMessage('Consultando CEP...', 'info');
     
-    // Simulação de consulta de CEP (substituir por API real)
+    // Simulação de consulta de CEP (delay para parecer real)
     setTimeout(() => {
-        simulateCepCheck(cep, cepMessage);
-    }, 1000);
+        simulateCepCheck(cep);
+    }, 800);
 }
 
-// ============================================
-// SISTEMA DE CEP E FRETE (CORRIGIDO)
-// ============================================
+function showCepMessage(message, type = 'info') {
+    console.log('Exibindo mensagem CEP:', message, type);
+    
+    const cepMessage = document.getElementById('cepMessage');
+    if (!cepMessage) {
+        console.error('Elemento cepMessage não encontrado!');
+        // Tenta criar o elemento se não existir
+        const cepSection = document.querySelector('.cep-section');
+        if (cepSection) {
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'cepMessage';
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle"></i> ${message}`;
+            cepSection.appendChild(messageDiv);
+            console.log('Elemento cepMessage criado dinamicamente');
+        }
+        return;
+    }
+    
+    // Atualiza a mensagem
+    cepMessage.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle"></i> ${message}`;
+    cepMessage.className = `message ${type}`;
+    
+    // Remove a mensagem após 10 segundos (exceto para erros)
+    if (type !== 'error') {
+        setTimeout(() => {
+            cepMessage.innerHTML = '';
+            cepMessage.className = 'message';
+        }, 10000);
+    }
+}
 
-function simulateCepCheck(cep, cepMessage) {
+function simulateCepCheck(cep) {
     const cepNumbers = cep.replace(/\D/g, '');
     const cepPrefix = cepNumbers.substring(0, 5);
+    const cepFirstTwo = cepNumbers.substring(0, 2);
     
-    console.log('Verificando CEP:', cep, 'Prefixo:', cepPrefix);
+    console.log('Verificando CEP:', cep);
+    console.log('Prefixo (5 dígitos):', cepPrefix);
+    console.log('Primeiros 2 dígitos:', cepFirstTwo);
     
-    // Faixas de CEP atualizadas para PR e SC
-    const cepRanges = {
-        'PR': [
-            '80000', '81000', '82000', '83000', '84000', '85000', '86000', '87000'
-        ],
-        'SC': [
-            '88000', '89000', '90000'
-        ]
-    };
-    
-    // Verifica se o CEP pertence a PR ou SC
     let state = '';
     
-    // Para PR: verifica se começa com os 5 primeiros dígitos dentro das faixas
-    if (cepRanges.PR.some(prefix => cepPrefix.startsWith(prefix.substring(0, 2)))) {
+    // Verifica se o CEP pertence a PR (80-87) ou SC (88-90)
+    if (cepFirstTwo >= '80' && cepFirstTwo <= '87') {
         state = 'PR';
-    }
-    // Para SC: verifica se começa com os 5 primeiros dígitos dentro das faixas
-    else if (cepRanges.SC.some(prefix => cepPrefix.startsWith(prefix.substring(0, 2)))) {
+    } else if (cepFirstTwo >= '88' && cepFirstTwo <= '90') {
         state = 'SC';
     }
     
@@ -886,6 +921,8 @@ function simulateCepCheck(cep, cepMessage) {
             }
             subtotal += itemPrice * item.quantity;
         });
+        
+        console.log('Subtotal calculado:', subtotal);
         
         // Frete baseado no estado e valor
         if (subtotal >= 1000) {
@@ -921,10 +958,7 @@ function simulateCepCheck(cep, cepMessage) {
             }
         }
         
-        // Atualiza a tela para mostrar que é de Ponta Grossa
-        if (cepPrefix >= '84000' && cepPrefix <= '84100') {
-            showCepMessage(`📍 Ponta Grossa/PR - Frete: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-        }
+        console.log('Frete calculado:', freightValue);
     } else {
         freightValue = 0;
         showCepMessage(`❌ Não atendemos este CEP (${cep}). Atendemos apenas Paraná (PR) e Santa Catarina (SC).`, 'error');
