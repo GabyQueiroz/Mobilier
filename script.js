@@ -1,17 +1,15 @@
-// Dados iniciais da empresa
+// ============================================
+// DADOS DO SISTEMA
+// ============================================
+
 const companyData = {
-    name: "Mobiliér - Mobiliário para Eventos",
+    name: "Mobilier - Mobiliário para Eventos",
     instagram: "@mobilier_mobiliario",
     phone: "(41) 99999-9999",
     email: "contato@mobilier.com.br",
-    deliveryStates: ["PR", "SC"],
-    cepRanges: {
-        'PR': ['80000', '83000', '84000'],
-        'SC': ['88000', '89000', '90000']
-    }
+    deliveryStates: ["PR", "SC"]
 };
 
-// Dados de produtos (estoque inicial)
 let products = [
     {
         id: 1,
@@ -19,10 +17,7 @@ let products = [
         description: "Cadeira rústica em madeira maciça, ideal para casamentos e eventos rurais.",
         price: 15.00,
         stock: 250,
-        bulkDiscount: {
-            quantity: 200,
-            price: 14.00
-        },
+        bulkDiscount: { quantity: 200, price: 14.00 },
         image: "fas fa-chair",
         category: "Cadeiras"
     },
@@ -32,10 +27,7 @@ let products = [
         description: "Mesa redonda para 8 pessoas, estrutura em metal e tampo de MDF.",
         price: 120.00,
         stock: 50,
-        bulkDiscount: {
-            quantity: 10,
-            price: 110.00
-        },
+        bulkDiscount: { quantity: 10, price: 110.00 },
         image: "fas fa-table",
         category: "Mesas"
     },
@@ -61,14 +53,11 @@ let products = [
     },
     {
         id: 5,
-        name: "Cadeira Dobrável Plastico",
+        name: "Cadeira Dobrável Plástico",
         description: "Cadeira dobrável em plástico resistente, fácil transporte e armazenamento.",
         price: 12.00,
         stock: 300,
-        bulkDiscount: {
-            quantity: 100,
-            price: 10.50
-        },
+        bulkDiscount: { quantity: 100, price: 10.50 },
         image: "fas fa-chair",
         category: "Cadeiras"
     },
@@ -78,10 +67,7 @@ let products = [
         description: "Mesa retangular para banquetes e eventos corporativos.",
         price: 150.00,
         stock: 30,
-        bulkDiscount: {
-            quantity: 5,
-            price: 140.00
-        },
+        bulkDiscount: { quantity: 5, price: 140.00 },
         image: "fas fa-table",
         category: "Mesas"
     },
@@ -107,18 +93,12 @@ let products = [
     }
 ];
 
-// Carrinho de compras
 let cart = [];
 let freightValue = 0;
-
-// Sistema de usuários
 let users = [];
 let currentUser = null;
-
-// Orçamentos salvos
 let savedBudgets = [];
 
-// Credenciais do admin (podem ser alteradas)
 const ADMIN_CREDENTIALS = {
     email: "admin@mobilier.com.br",
     password: "admin123",
@@ -126,194 +106,107 @@ const ADMIN_CREDENTIALS = {
     isAdmin: true
 };
 
-// Inicialização quando o DOM carrega
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Mobiliér - Sistema iniciando...');
+    console.log('Sistema Mobilier iniciando...');
     
-    // Carrega dados do localStorage
     loadFromLocalStorage();
-    
-    // Inicializa usuários (se for primeira vez, cria admin)
     initializeUsers();
+    initUI();
+    setupEventListeners();
     
-    // Inicializa elementos da interface
-    initMobileMenu();
-    initUserMenu();
-    initLoginModal();
-    initModals();
-    
-    // Renderiza conteúdo inicial
+    console.log('Sistema pronto!');
+});
+
+function initUI() {
     renderProducts();
     renderBudgetItems();
     updateCartDisplay();
     updateBudgetSummary();
-    initAdminPanel();
-    
-    // Atualiza estado do usuário
     updateUserState();
-    
-    // Adiciona event listeners globais
-    setupEventListeners();
-    
-    console.log('Sistema inicializado com sucesso!');
-});
-
-// ============================================
-// FUNÇÕES DE INICIALIZAÇÃO
-// ============================================
-
-function initMobileMenu() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mainNav = document.getElementById('mainNav');
-    
-    if (!mobileMenuBtn || !mainNav) return;
-    
-    mobileMenuBtn.addEventListener('click', function() {
-        const isVisible = mainNav.style.display === 'block';
-        mainNav.style.display = isVisible ? 'none' : 'block';
-        this.innerHTML = isVisible ? '<i class="fas fa-bars"></i>' : '<i class="fas fa-times"></i>';
-    });
-    
-    // Fecha menu ao clicar em um link
-    mainNav.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A') {
-            this.style.display = 'none';
-            mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-        }
-    });
-    
-    // Ajusta menu em redimensionamento
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-            mainNav.style.display = '';
-            mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-        } else {
-            mainNav.style.display = 'none';
-        }
-    });
-}
-
-function initUserMenu() {
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    if (!userMenuBtn) return;
-    
-    // Cria dropdown do usuário
-    const dropdown = document.createElement('div');
-    dropdown.className = 'user-dropdown';
-    dropdown.innerHTML = `
-        <ul>
-            <li><a href="#" id="myBudgetsLink"><i class="fas fa-file-invoice-dollar"></i> Meus Orçamentos</a></li>
-            <li><a href="#" id="myProfileLink"><i class="fas fa-user-cog"></i> Meu Perfil</a></li>
-            <li class="divider"></li>
-            <li><button id="logoutButton"><i class="fas fa-sign-out-alt"></i> Sair</button></li>
-        </ul>
-    `;
-    
-    userMenuBtn.parentNode.appendChild(dropdown);
-    
-    userMenuBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (currentUser) {
-            dropdown.classList.toggle('active');
-        } else {
-            openLoginModal();
-        }
-    });
-    
-    // Fecha dropdown ao clicar fora
-    document.addEventListener('click', function(e) {
-        if (!dropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
-            dropdown.classList.remove('active');
-        }
-    });
-    
-    // Event listeners do dropdown
-    document.getElementById('logoutButton').addEventListener('click', logout);
-    document.getElementById('myBudgetsLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        showMyBudgets();
-        dropdown.classList.remove('active');
-    });
-    document.getElementById('myProfileLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        showMyProfile();
-        dropdown.classList.remove('active');
-    });
-}
-
-function initLoginModal() {
-    const loginModal = document.getElementById('loginModal');
-    const closeBtn = document.querySelector('.close-login-modal');
-    const loginBtn = document.getElementById('loginButton');
-    const registerBtn = document.getElementById('registerButton');
-    
-    if (!loginModal || !closeBtn || !loginBtn || !registerBtn) return;
-    
-    closeBtn.addEventListener('click', closeLoginModal);
-    
-    loginBtn.addEventListener('click', function() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        login(email, password);
-    });
-    
-    registerBtn.addEventListener('click', function() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        register(email, password);
-    });
-    
-    // Permitir login com Enter
-    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            login(email, password);
-        }
-    });
-}
-
-function initModals() {
-    // Fechar modais ao clicar fora
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-            }
-        });
-    });
 }
 
 function setupEventListeners() {
-    // Orçamento
+    // Menu mobile
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navMenu = document.querySelector('.nav-menu');
+    
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            navMenu.classList.toggle('show');
+            this.innerHTML = navMenu.classList.contains('show') ? 
+                '<i class="fas fa-times"></i>' : 
+                '<i class="fas fa-bars"></i>';
+        });
+    }
+    
+    // User menu
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    if (userMenuBtn) {
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (currentUser) {
+                showUserMenu();
+            } else {
+                openLoginModal();
+            }
+        });
+    }
+    
+    // Close menus when clicking outside
+    document.addEventListener('click', function() {
+        closeUserMenu();
+        const navMenu = document.querySelector('.nav-menu');
+        if (navMenu) navMenu.classList.remove('show');
+    });
+    
+    // Login modal
+    document.querySelector('.close-login-modal')?.addEventListener('click', closeLoginModal);
+    document.getElementById('loginButton')?.addEventListener('click', handleLogin);
+    document.getElementById('registerButton')?.addEventListener('click', handleRegister);
+    
+    // CEP
     document.getElementById('checkCep')?.addEventListener('click', checkCep);
     document.getElementById('saveBudget')?.addEventListener('click', saveBudget);
     document.getElementById('clearBudget')?.addEventListener('click', clearBudget);
     
-    // IA Assistant
+    // AI Assistant
     document.getElementById('aiSuggest')?.addEventListener('click', getAISuggestions);
     
-    // CEP input formatting
-    document.getElementById('cep')?.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 5) {
-            value = value.substring(0, 5) + '-' + value.substring(5, 8);
-        }
-        e.target.value = value;
-    });
-    
-    // Admin
+    // Admin modal
     document.querySelector('.close-modal')?.addEventListener('click', closeAdminModal);
     
+    // Admin tabs
     document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.addEventListener('click', function() {
-            const tabId = this.getAttribute('data-tab');
-            switchAdminTab(tabId);
+            switchAdminTab(this.getAttribute('data-tab'));
         });
     });
     
+    // Admin buttons
     document.getElementById('addProduct')?.addEventListener('click', addNewProduct);
     document.getElementById('saveSettings')?.addEventListener('click', saveSettings);
+    
+    // CEP formatting
+    const cepInput = document.getElementById('cep');
+    if (cepInput) {
+        cepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5, 8);
+            }
+            e.target.value = value;
+        });
+        
+        cepInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkCep();
+            }
+        });
+    }
 }
 
 // ============================================
@@ -321,7 +214,6 @@ function setupEventListeners() {
 // ============================================
 
 function initializeUsers() {
-    // Se não há usuários no localStorage, cria o admin
     if (users.length === 0) {
         users.push({
             id: 1,
@@ -331,50 +223,138 @@ function initializeUsers() {
             isAdmin: true,
             createdAt: new Date().toISOString()
         });
-        console.log('Usuário admin criado:', ADMIN_CREDENTIALS.email);
         saveToLocalStorage();
     }
     
-    // Verifica se há usuário na sessão
     const savedUser = sessionStorage.getItem('currentUser');
     if (savedUser) {
         try {
             currentUser = JSON.parse(savedUser);
-            console.log('Usuário recuperado da sessão:', currentUser.email);
         } catch (e) {
-            console.error('Erro ao recuperar usuário da sessão:', e);
             sessionStorage.removeItem('currentUser');
         }
     }
 }
 
-function openLoginModal() {
-    const loginModal = document.getElementById('loginModal');
-    if (loginModal) {
-        loginModal.style.display = 'block';
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('loginMessage').textContent = '';
-        document.getElementById('loginEmail').focus();
+function showUserMenu() {
+    // Remove existing menu
+    const existingMenu = document.querySelector('.user-dropdown');
+    if (existingMenu) existingMenu.remove();
+    
+    // Create new menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'user-dropdown active';
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = '100%';
+    dropdown.style.right = '0';
+    dropdown.style.backgroundColor = 'white';
+    dropdown.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+    dropdown.style.borderRadius = '10px';
+    dropdown.style.minWidth = '200px';
+    dropdown.style.zIndex = '1000';
+    dropdown.style.overflow = 'hidden';
+    
+    let menuHTML = '<ul style="list-style: none; padding: 0; margin: 0;">';
+    
+    if (currentUser) {
+        if (currentUser.isAdmin) {
+            menuHTML += `
+                <li>
+                    <a href="#" id="adminLink" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-tools"></i> Painel Admin
+                    </a>
+                </li>
+                <li style="background: #f5f5f5; height: 1px; margin: 0;"></li>
+            `;
+        }
+        
+        menuHTML += `
+            <li>
+                <a href="#" id="myBudgetsLink" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                    <i class="fas fa-file-invoice-dollar"></i> Meus Orçamentos
+                </a>
+            </li>
+            <li>
+                <a href="#" id="myProfileLink" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                    <i class="fas fa-user-cog"></i> Meu Perfil
+                </a>
+            </li>
+            <li style="background: #f5f5f5; height: 1px; margin: 0;"></li>
+            <li>
+                <button id="logoutButton" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; width: 100%; border: none; background: none; cursor: pointer; color: #333; text-align: left;">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </li>
+        `;
+    }
+    
+    menuHTML += '</ul>';
+    dropdown.innerHTML = menuHTML;
+    
+    // Add to DOM
+    document.querySelector('.user-menu').appendChild(dropdown);
+    
+    // Add event listeners
+    setTimeout(() => {
+        document.getElementById('myBudgetsLink')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeUserMenu();
+            showMyBudgets();
+        });
+        
+        document.getElementById('myProfileLink')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeUserMenu();
+            showMyProfile();
+        });
+        
+        document.getElementById('adminLink')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeUserMenu();
+            openAdminModal();
+        });
+        
+        document.getElementById('logoutButton')?.addEventListener('click', function() {
+            logout();
+            closeUserMenu();
+        });
+    }, 10);
+}
+
+function closeUserMenu() {
+    const dropdown = document.querySelector('.user-dropdown');
+    if (dropdown) dropdown.remove();
+}
+
+function updateUserState() {
+    const userNameSpan = document.getElementById('userName');
+    const userMenuBtn = document.querySelector('.user-menu-btn i');
+    
+    if (userNameSpan && userMenuBtn) {
+        if (currentUser) {
+            let userNameText = currentUser.name;
+            if (currentUser.isAdmin) {
+                userNameText += ' <span class="admin-badge">ADMIN</span>';
+            }
+            userNameSpan.innerHTML = userNameText;
+            userMenuBtn.className = 'fas fa-user-check';
+        } else {
+            userNameSpan.textContent = 'Entrar';
+            userMenuBtn.className = 'fas fa-user';
+        }
     }
 }
 
-function closeLoginModal() {
-    const loginModal = document.getElementById('loginModal');
-    if (loginModal) {
-        loginModal.style.display = 'none';
-    }
-}
-
-function login(email, password) {
-    const loginMessage = document.getElementById('loginMessage');
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
     
     if (!email || !password) {
         showLoginMessage('Por favor, preencha todos os campos.', 'error');
         return;
     }
     
-    // Verifica se é o admin
+    // Check admin
     if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
         currentUser = {
             id: 0,
@@ -383,16 +363,14 @@ function login(email, password) {
             isAdmin: true
         };
         
-        // Salva na sessão
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
         closeLoginModal();
         updateUserState();
-        showMessage('Login como administrador realizado com sucesso!', 'success');
+        showMessage('Login como administrador realizado!', 'success');
         return;
     }
     
-    // Verifica usuários comuns
+    // Check regular users
     const user = users.find(u => u.email === email && u.password === password);
     
     if (user) {
@@ -403,9 +381,7 @@ function login(email, password) {
             isAdmin: user.isAdmin || false
         };
         
-        // Salva na sessão
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
         closeLoginModal();
         updateUserState();
         showMessage(`Bem-vindo(a), ${user.name}!`, 'success');
@@ -414,34 +390,31 @@ function login(email, password) {
     }
 }
 
-function register(email, password) {
-    const loginMessage = document.getElementById('loginMessage');
+function handleRegister() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
     
     if (!email || !password) {
         showLoginMessage('Por favor, preencha todos os campos.', 'error');
         return;
     }
     
-    // Validação de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showLoginMessage('Por favor, insira um e-mail válido.', 'error');
         return;
     }
     
-    // Verifica se email já existe
     if (users.some(u => u.email === email)) {
         showLoginMessage('Este e-mail já está cadastrado.', 'error');
         return;
     }
     
-    // Validação de senha
     if (password.length < 6) {
         showLoginMessage('A senha deve ter pelo menos 6 caracteres.', 'error');
         return;
     }
     
-    // Cria novo usuário
     const newUser = {
         id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
         email: email,
@@ -454,7 +427,6 @@ function register(email, password) {
     users.push(newUser);
     saveToLocalStorage();
     
-    // Faz login automaticamente
     currentUser = {
         id: newUser.id,
         email: newUser.email,
@@ -462,7 +434,6 @@ function register(email, password) {
         isAdmin: false
     };
     
-    // Salva na sessão
     sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
     
     closeLoginModal();
@@ -477,47 +448,7 @@ function logout() {
     showMessage('Logout realizado com sucesso.', 'success');
 }
 
-function updateUserState() {
-    const userNameSpan = document.getElementById('userName');
-    const userMenuBtn = document.querySelector('.user-menu-btn i');
-    const userDropdown = document.querySelector('.user-dropdown ul');
-    
-    if (!userNameSpan || !userMenuBtn) return;
-    
-    if (currentUser) {
-        userNameSpan.textContent = currentUser.name;
-        userMenuBtn.className = 'fas fa-user-check';
-        
-        // Adiciona badge de admin se for administrador
-        if (currentUser.isAdmin) {
-            userNameSpan.innerHTML = `${currentUser.name} <span class="admin-badge">ADMIN</span>`;
-            
-            // Adiciona link para admin no dropdown
-            if (userDropdown && !document.querySelector('#adminLink')) {
-                const adminLi = document.createElement('li');
-                adminLi.innerHTML = '<a href="#" id="adminLink"><i class="fas fa-tools"></i> Painel Admin</a>';
-                userDropdown.insertBefore(adminLi, userDropdown.firstChild);
-                
-                document.getElementById('adminLink').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    openAdminModal();
-                    document.querySelector('.user-dropdown').classList.remove('active');
-                });
-            }
-        }
-    } else {
-        userNameSpan.textContent = 'Entrar';
-        userMenuBtn.className = 'fas fa-user';
-        
-        // Remove link do admin se existir
-        const adminLink = document.querySelector('#adminLink');
-        if (adminLink) {
-            adminLink.parentNode.remove();
-        }
-    }
-}
-
-function showLoginMessage(message, type = 'error') {
+function showLoginMessage(message, type) {
     const loginMessage = document.getElementById('loginMessage');
     if (loginMessage) {
         loginMessage.textContent = message;
@@ -526,7 +457,586 @@ function showLoginMessage(message, type = 'error') {
 }
 
 // ============================================
-// FUNÇÕES DE PRODUTOS E ORÇAMENTO
+// MODAIS
+// ============================================
+
+function openLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.style.display = 'block';
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginMessage').textContent = '';
+    }
+}
+
+function closeLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.style.display = 'none';
+    }
+}
+
+function openAdminModal() {
+    if (!currentUser || !currentUser.isAdmin) {
+        showMessage('Acesso restrito. Faça login como administrador.', 'error');
+        openLoginModal();
+        return;
+    }
+    
+    const adminModal = document.getElementById('adminModal');
+    if (adminModal) {
+        adminModal.style.display = 'block';
+        updateAdminProductsList();
+        updateAdminBudgetsList();
+    }
+}
+
+function closeAdminModal() {
+    const adminModal = document.getElementById('adminModal');
+    if (adminModal) {
+        adminModal.style.display = 'none';
+    }
+}
+
+function switchAdminTab(tabId) {
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+    });
+    
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `${tabId}Tab`);
+    });
+}
+
+// ============================================
+// MEUS ORÇAMENTOS - CORRIGIDO
+// ============================================
+
+function showMyBudgets() {
+    if (!currentUser) {
+        openLoginModal();
+        return;
+    }
+    
+    const userBudgets = savedBudgets.filter(budget => budget.userId === currentUser.id);
+    
+    if (userBudgets.length === 0) {
+        showMessage('Você não tem orçamentos salvos.', 'info');
+        return;
+    }
+    
+    // Criar modal específico para orçamentos
+    createBudgetModal(userBudgets, 'Meus Orçamentos');
+}
+
+function createBudgetModal(budgets, title) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('budgetsModal');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.id = 'budgetsModal';
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    // Create modal content
+    let modalHTML = `
+        <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>${title}</h2>
+                <span class="close-budgets-modal" style="font-size: 28px; cursor: pointer; color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+    `;
+    
+    // Sort budgets by date (newest first)
+    const sortedBudgets = budgets.sort((a, b) => b.id - a.id);
+    
+    if (sortedBudgets.length === 0) {
+        modalHTML += '<p class="empty-message">Nenhum orçamento encontrado.</p>';
+    } else {
+        sortedBudgets.forEach(budget => {
+            const itemsList = budget.items.map(item => 
+                `${item.quantity}x ${item.name.substring(0, 30)}${item.name.length > 30 ? '...' : ''}`
+            ).join(', ');
+            
+            modalHTML += `
+                <div class="budget-item" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <div>
+                            <span style="color: #666; font-size: 0.9em;">${budget.date}</span>
+                            ${budget.userName && budget.userName !== currentUser?.name ? `<p style="margin: 5px 0 0 0; font-size: 0.9em; color: #888;">Cliente: ${budget.userName}</p>` : ''}
+                            <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #888;">Itens: ${itemsList}</p>
+                            <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #888;">CEP: ${budget.cep}</p>
+                        </div>
+                        <span style="font-weight: bold; color: #d4af37; font-size: 1.2em;">R$ ${budget.total.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-small view-budget-details" data-id="${budget.id}" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </button>
+                        <button class="btn-small duplicate-budget-btn" data-id="${budget.id}" style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-copy"></i> Reutilizar
+                        </button>
+                        ${currentUser?.isAdmin ? `
+                        <button class="btn-small delete-budget-btn" data-id="${budget.id}" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    modalHTML += `
+            </div>
+        </div>
+    `;
+    
+    modal.innerHTML = modalHTML;
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        // Close button
+        document.querySelector('.close-budgets-modal').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        // View details buttons
+        document.querySelectorAll('.view-budget-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const budgetId = parseInt(this.getAttribute('data-id'));
+                modal.remove();
+                showBudgetDetails(budgetId);
+            });
+        });
+        
+        // Duplicate buttons
+        document.querySelectorAll('.duplicate-budget-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const budgetId = parseInt(this.getAttribute('data-id'));
+                modal.remove();
+                duplicateBudget(budgetId);
+            });
+        });
+        
+        // Delete buttons (admin only)
+        document.querySelectorAll('.delete-budget-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const budgetId = parseInt(this.getAttribute('data-id'));
+                if (confirm('Tem certeza que deseja excluir este orçamento?')) {
+                    deleteBudget(budgetId);
+                    modal.remove();
+                }
+            });
+        });
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                modal.remove();
+            }
+        });
+        
+        // Close with ESC
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }, 10);
+}
+
+function showBudgetDetails(budgetId) {
+    const budget = savedBudgets.find(b => b.id === budgetId);
+    if (!budget) return;
+    
+    let itemsHTML = '';
+    budget.items.forEach((item, index) => {
+        itemsHTML += `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${index + 1}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.price.toFixed(2).replace('.', ',')}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.total.toFixed(2).replace('.', ',')}</td>
+            </tr>
+        `;
+    });
+    
+    const detailsHTML = `
+        <div style="max-height: 60vh; overflow-y: auto;">
+            <h3>Detalhes do Orçamento #${budget.id}</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <div>
+                    <p><strong>Data:</strong> ${budget.date}</p>
+                    <p><strong>Cliente:</strong> ${budget.userName}</p>
+                    <p><strong>ID do Cliente:</strong> ${budget.userId}</p>
+                </div>
+                <div>
+                    <p><strong>CEP:</strong> ${budget.cep}</p>
+                    <p><strong>Status:</strong> <span style="padding: 4px 12px; background: #fff3cd; color: #856404; border-radius: 20px;">${budget.status}</span></p>
+                </div>
+            </div>
+            
+            <h4>Itens do Orçamento</h4>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 10px; text-align: left;">#</th>
+                            <th style="padding: 10px; text-align: left;">Produto</th>
+                            <th style="padding: 10px; text-align: center;">Quantidade</th>
+                            <th style="padding: 10px; text-align: right;">Preço Unit.</th>
+                            <th style="padding: 10px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="text-align: right; font-weight: bold; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <p style="font-size: 1.1rem;">Subtotal: R$ ${budget.subtotal.toFixed(2).replace('.', ',')}</p>
+                <p style="font-size: 1.1rem;">Frete: R$ ${budget.freight.toFixed(2).replace('.', ',')}</p>
+                <p style="font-size: 1.3rem; color: #1a365d; margin-top: 10px;">Total: R$ ${budget.total.toFixed(2).replace('.', ',')}</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="cta-button duplicate-from-details" data-id="${budget.id}" style="padding: 12px 30px; margin-right: 10px;">
+                <i class="fas fa-copy"></i> Reutilizar
+            </button>
+            <button class="btn-outline close-details" style="padding: 12px 30px;">
+                <i class="fas fa-times"></i> Fechar
+            </button>
+        </div>
+    `;
+    
+    // Create modal for details
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Orçamento #${budget.id}</h2>
+                <span class="close-details-modal" style="font-size: 28px; cursor: pointer; color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                ${detailsHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        // Close buttons
+        document.querySelector('.close-details-modal').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        document.querySelector('.close-details').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        // Duplicate button
+        document.querySelector('.duplicate-from-details').addEventListener('click', function() {
+            const budgetId = parseInt(this.getAttribute('data-id'));
+            modal.remove();
+            duplicateBudget(budgetId);
+        });
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                modal.remove();
+            }
+        });
+        
+        // Close with ESC
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }, 10);
+}
+
+function duplicateBudget(budgetId) {
+    const budget = savedBudgets.find(b => b.id === budgetId);
+    if (!budget) return;
+    
+    // Clear current cart
+    cart = [];
+    
+    // Add items from budget
+    budget.items.forEach(budgetItem => {
+        const product = products.find(p => p.name === budgetItem.name);
+        if (product) {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: budgetItem.quantity,
+                bulkDiscount: product.bulkDiscount
+            });
+        }
+    });
+    
+    // Update interface
+    updateCartDisplay();
+    updateBudgetSummary();
+    renderBudgetItems();
+    
+    // Fill CEP
+    const cepInput = document.getElementById('cep');
+    if (cepInput && budget.cep) {
+        cepInput.value = budget.cep;
+    }
+    
+    showMessage('Orçamento reutilizado com sucesso!', 'success');
+    
+    // Scroll to budget section
+    document.getElementById('budget').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteBudget(budgetId) {
+    const budgetIndex = savedBudgets.findIndex(b => b.id === budgetId);
+    
+    if (budgetIndex === -1) {
+        showMessage('Orçamento não encontrado.', 'error');
+        return;
+    }
+    
+    savedBudgets.splice(budgetIndex, 1);
+    saveToLocalStorage();
+    
+    if (currentUser?.isAdmin) {
+        updateAdminBudgetsList();
+    }
+    
+    showMessage('Orçamento excluído com sucesso!', 'success');
+}
+
+// ============================================
+// MEU PERFIL
+// ============================================
+
+function showMyProfile() {
+    if (!currentUser) {
+        openLoginModal();
+        return;
+    }
+    
+    const profileHTML = `
+        <h3>Meu Perfil</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Nome:</strong> ${currentUser.name}</p>
+            <p><strong>E-mail:</strong> ${currentUser.email}</p>
+            <p><strong>Tipo de Conta:</strong> ${currentUser.isAdmin ? 'Administrador' : 'Cliente'}</p>
+        </div>
+        ${!currentUser.isAdmin ? `
+        <div style="text-align: center; margin: 30px 0;">
+            <button id="changePasswordBtn" class="cta-button" style="padding: 12px 30px;">
+                <i class="fas fa-key"></i> Alterar Senha
+            </button>
+        </div>
+        ` : ''}
+        <div style="text-align: center;">
+            <button class="btn-outline close-profile" style="padding: 12px 30px;">
+                <i class="fas fa-times"></i> Fechar
+            </button>
+        </div>
+    `;
+    
+    // Create modal for profile
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Meu Perfil</h2>
+                <span class="close-profile-modal" style="font-size: 28px; cursor: pointer; color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                ${profileHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        // Close buttons
+        document.querySelector('.close-profile-modal').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        document.querySelector('.close-profile').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        // Change password button
+        if (!currentUser.isAdmin) {
+            document.getElementById('changePasswordBtn').addEventListener('click', function() {
+                modal.remove();
+                showChangePasswordModal();
+            });
+        }
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                modal.remove();
+            }
+        });
+        
+        // Close with ESC
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }, 10);
+}
+
+function showChangePasswordModal() {
+    const modalHTML = `
+        <h3>Alterar Senha</h3>
+        <div style="margin: 20px 0;">
+            <div class="form-group">
+                <label for="currentPassword">Senha Atual</label>
+                <input type="password" id="currentPassword" placeholder="Digite sua senha atual" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">Nova Senha</label>
+                <input type="password" id="newPassword" placeholder="Digite a nova senha" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirmar Nova Senha</label>
+                <input type="password" id="confirmPassword" placeholder="Confirme a nova senha" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+            </div>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+            <button id="savePasswordBtn" class="cta-button" style="padding: 12px 30px; margin-right: 10px;">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+            <button class="btn-outline cancel-password" style="padding: 12px 30px;">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+        <p id="passwordMessage" style="text-align: center; color: #e74c3c; margin-top: 15px;"></p>
+    `;
+    
+    // Create modal for password change
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Alterar Senha</h2>
+                <span class="close-password-modal" style="font-size: 28px; cursor: pointer; color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                ${modalHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        // Close buttons
+        document.querySelector('.close-password-modal').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        document.querySelector('.cancel-password').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        // Save button
+        document.getElementById('savePasswordBtn').addEventListener('click', function() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordMessage = document.getElementById('passwordMessage');
+            
+            // Validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                passwordMessage.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                passwordMessage.textContent = 'As senhas não coincidem.';
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                passwordMessage.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+                return;
+            }
+            
+            // Find user
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            
+            if (userIndex === -1) {
+                passwordMessage.textContent = 'Erro ao encontrar usuário.';
+                return;
+            }
+            
+            // Check current password
+            if (users[userIndex].password !== currentPassword) {
+                passwordMessage.textContent = 'Senha atual incorreta.';
+                return;
+            }
+            
+            // Update password
+            users[userIndex].password = newPassword;
+            saveToLocalStorage();
+            
+            modal.remove();
+            showMessage('Senha alterada com sucesso!', 'success');
+        });
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                modal.remove();
+            }
+        });
+        
+        // Close with ESC
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }, 10);
+}
+
+// ============================================
+// SISTEMA DE PRODUTOS E ORÇAMENTO
 // ============================================
 
 function renderProducts() {
@@ -535,36 +1045,14 @@ function renderProducts() {
     
     productsGrid.innerHTML = '';
     
-    if (products.length === 0) {
-        productsGrid.innerHTML = '<p class="empty-message">Nenhum produto cadastrado.</p>';
-        return;
-    }
-    
     products.forEach(product => {
+        const stockClass = product.stock === 0 ? 'out' : product.stock < 20 ? 'low' : 'available';
+        const stockText = product.stock === 0 ? 'Esgotado' : 
+                         product.stock < 20 ? `${product.stock} unidades (estoque baixo)` : 
+                         `${product.stock} unidades disponíveis`;
+        
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
-        
-        // Determina classe de estoque
-        let stockClass = 'available';
-        let stockText = `${product.stock} unidades disponíveis`;
-        let stockIcon = '<i class="fas fa-check-circle"></i>';
-        
-        if (product.stock === 0) {
-            stockClass = 'out';
-            stockText = 'Esgotado';
-            stockIcon = '<i class="fas fa-times-circle"></i>';
-        } else if (product.stock < 20) {
-            stockClass = 'low';
-            stockText = `${product.stock} unidades (estoque baixo)`;
-            stockIcon = '<i class="fas fa-exclamation-circle"></i>';
-        }
-        
-        // Verifica se tem desconto por quantidade
-        let priceText = `R$ ${product.price.toFixed(2).replace('.', ',')} cada`;
-        if (product.bulkDiscount) {
-            priceText += `<small>${product.bulkDiscount.quantity}+ unidades: R$ ${product.bulkDiscount.price.toFixed(2).replace('.', ',')} cada</small>`;
-        }
-        
         productCard.innerHTML = `
             <div class="product-image">
                 <i class="${product.image}"></i>
@@ -572,8 +1060,10 @@ function renderProducts() {
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
-                <p class="product-price">${priceText}</p>
-                <p class="product-stock ${stockClass}">${stockIcon} ${stockText}</p>
+                <p class="product-price">R$ ${product.price.toFixed(2).replace('.', ',')} cada</p>
+                <p class="product-stock ${stockClass}">
+                    <i class="fas fa-${stockClass === 'available' ? 'check' : stockClass === 'low' ? 'exclamation' : 'times'}-circle"></i> ${stockText}
+                </p>
                 <div class="product-actions">
                     <button class="btn-secondary add-to-budget" data-id="${product.id}">
                         <i class="fas fa-cart-plus"></i> Adicionar
@@ -588,7 +1078,7 @@ function renderProducts() {
         productsGrid.appendChild(productCard);
     });
     
-    // Adiciona event listeners aos botões
+    // Add event listeners
     document.querySelectorAll('.add-to-budget').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
@@ -599,9 +1089,109 @@ function renderProducts() {
     document.querySelectorAll('.view-details').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
-            viewProductDetails(productId);
+            showProductDetails(productId);
         });
     });
+}
+
+function showProductDetails(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    const detailsHTML = `
+        <h3>${product.name}</h3>
+        <div style="display: flex; gap: 20px; margin: 20px 0;">
+            <div style="flex: 1; text-align: center;">
+                <i class="${product.image}" style="font-size: 80px; color: #1a365d;"></i>
+            </div>
+            <div style="flex: 2;">
+                <p><strong>Categoria:</strong> ${product.category}</p>
+                <p><strong>Preço:</strong> R$ ${product.price.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Estoque:</strong> ${product.stock} unidades</p>
+                ${product.bulkDiscount ? `
+                    <p><strong>Desconto:</strong> ${product.bulkDiscount.quantity}+ unidades por R$ ${product.bulkDiscount.price.toFixed(2).replace('.', ',')} cada</p>
+                ` : ''}
+            </div>
+        </div>
+        <p><strong>Descrição:</strong> ${product.description}</p>
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="cta-button add-from-details" data-id="${product.id}" style="padding: 12px 30px;">
+                <i class="fas fa-cart-plus"></i> Adicionar ao Orçamento
+            </button>
+        </div>
+    `;
+    
+    // Create modal for product details
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Detalhes do Produto</h2>
+                <span class="close-product-modal" style="font-size: 28px; cursor: pointer; color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                ${detailsHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        document.querySelector('.close-product-modal').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        document.querySelector('.add-from-details').addEventListener('click', function() {
+            const productId = parseInt(this.getAttribute('data-id'));
+            addToBudget(productId);
+            modal.remove();
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                modal.remove();
+            }
+        });
+    }, 10);
+}
+
+function addToBudget(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    if (product.stock === 0) {
+        showMessage('Este produto está esgotado.', 'error');
+        return;
+    }
+    
+    const cartItem = cart.find(item => item.id === productId);
+    
+    if (cartItem) {
+        if (cartItem.quantity < product.stock) {
+            cartItem.quantity += 1;
+        } else {
+            showMessage(`Estoque insuficiente. Máximo: ${product.stock} unidades.`, 'error');
+            return;
+        }
+    } else {
+        cart.push({
+            id: productId,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            bulkDiscount: product.bulkDiscount
+        });
+    }
+    
+    updateCartDisplay();
+    updateBudgetSummary();
+    renderBudgetItems();
+    
+    showMessage(`${product.name} adicionado ao orçamento.`, 'success');
 }
 
 function renderBudgetItems() {
@@ -638,7 +1228,7 @@ function renderBudgetItems() {
         itemsContainer.appendChild(itemElement);
     });
     
-    // Adiciona event listeners aos controles de quantidade
+    // Add event listeners
     document.querySelectorAll('.decrease-quantity').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
@@ -660,41 +1250,6 @@ function renderBudgetItems() {
             updateCartQuantity(productId, quantity, true);
         });
     });
-}
-
-function addToBudget(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    if (product.stock === 0) {
-        showMessage('Este produto está esgotado no momento.', 'error');
-        return;
-    }
-    
-    const cartItem = cart.find(item => item.id === productId);
-    
-    if (cartItem) {
-        if (cartItem.quantity < product.stock) {
-            cartItem.quantity += 1;
-        } else {
-            showMessage(`Não há estoque suficiente. Máximo: ${product.stock} unidades.`, 'error');
-            return;
-        }
-    } else {
-        cart.push({
-            id: productId,
-            name: product.name,
-            price: product.price,
-            quantity: 1,
-            bulkDiscount: product.bulkDiscount
-        });
-    }
-    
-    updateCartDisplay();
-    updateBudgetSummary();
-    renderBudgetItems();
-    
-    showMessage(`${product.name} adicionado ao orçamento.`, 'success');
 }
 
 function updateCartQuantity(productId, change, setAbsolute = false) {
@@ -734,7 +1289,7 @@ function updateCartQuantity(productId, change, setAbsolute = false) {
             if (newQuantity <= 0) {
                 cart = cart.filter(item => item.id !== productId);
             } else if (newQuantity > product.stock) {
-                showMessage(`Não há estoque suficiente. Máximo: ${product.stock} unidades.`, 'error');
+                showMessage(`Estoque insuficiente. Máximo: ${product.stock} unidades.`, 'error');
                 return;
             } else {
                 cartItem.quantity = newQuantity;
@@ -796,11 +1351,9 @@ function updateBudgetSummary() {
     
     cart.forEach(item => {
         let itemPrice = item.price;
-        
         if (item.bulkDiscount && item.quantity >= item.bulkDiscount.quantity) {
             itemPrice = item.bulkDiscount.price;
         }
-        
         subtotal += itemPrice * item.quantity;
     });
     
@@ -812,107 +1365,44 @@ function updateBudgetSummary() {
 }
 
 // ============================================
-// SISTEMA DE CEP E FRETE
-// ============================================
-
-
-// ============================================
-// SISTEMA DE CEP E FRETE (CORRIGIDO)
+// CEP E FRETE
 // ============================================
 
 function checkCep() {
-    console.log('Função checkCep() iniciada');
-    
     const cepInput = document.getElementById('cep');
-    const cepMessage = document.getElementById('cepMessage');
-    
-    console.log('CEP input encontrado:', !!cepInput);
-    console.log('CEP message encontrado:', !!cepMessage);
-    
-    if (!cepInput) {
-        console.error('Elemento CEP não encontrado!');
-        showMessage('Erro: campo CEP não encontrado.', 'error');
-        return;
-    }
+    if (!cepInput) return;
     
     let cep = cepInput.value.replace(/\D/g, '');
-    console.log('CEP digitado (somente números):', cep);
     
     if (cep.length !== 8) {
-        console.log('CEP inválido - tamanho incorreto:', cep.length);
         showCepMessage('CEP inválido. Digite um CEP com 8 dígitos.', 'error');
         freightValue = 0;
         updateBudgetSummary();
         return;
     }
     
-    // Formata CEP (XXXXX-XXX)
     cep = cep.substring(0, 5) + '-' + cep.substring(5);
     cepInput.value = cep;
-    console.log('CEP formatado:', cep);
     
     showCepMessage('Consultando CEP...', 'info');
     
-    // Simulação de consulta de CEP (delay para parecer real)
     setTimeout(() => {
         simulateCepCheck(cep);
     }, 800);
 }
 
-function showCepMessage(message, type = 'info') {
-    console.log('Exibindo mensagem CEP:', message, type);
-    
-    const cepMessage = document.getElementById('cepMessage');
-    if (!cepMessage) {
-        console.error('Elemento cepMessage não encontrado!');
-        // Tenta criar o elemento se não existir
-        const cepSection = document.querySelector('.cep-section');
-        if (cepSection) {
-            const messageDiv = document.createElement('div');
-            messageDiv.id = 'cepMessage';
-            messageDiv.className = `message ${type}`;
-            messageDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle"></i> ${message}`;
-            cepSection.appendChild(messageDiv);
-            console.log('Elemento cepMessage criado dinamicamente');
-        }
-        return;
-    }
-    
-    // Atualiza a mensagem
-    cepMessage.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle"></i> ${message}`;
-    cepMessage.className = `message ${type}`;
-    
-    // Remove a mensagem após 10 segundos (exceto para erros)
-    if (type !== 'error') {
-        setTimeout(() => {
-            cepMessage.innerHTML = '';
-            cepMessage.className = 'message';
-        }, 10000);
-    }
-}
-
 function simulateCepCheck(cep) {
     const cepNumbers = cep.replace(/\D/g, '');
-    const cepPrefix = cepNumbers.substring(0, 5);
     const cepFirstTwo = cepNumbers.substring(0, 2);
     
-    console.log('Verificando CEP:', cep);
-    console.log('Prefixo (5 dígitos):', cepPrefix);
-    console.log('Primeiros 2 dígitos:', cepFirstTwo);
-    
     let state = '';
-    
-    // Verifica se o CEP pertence a PR (80-87) ou SC (88-90)
     if (cepFirstTwo >= '80' && cepFirstTwo <= '87') {
         state = 'PR';
     } else if (cepFirstTwo >= '88' && cepFirstTwo <= '90') {
         state = 'SC';
     }
     
-    console.log('Estado detectado:', state);
-    
     if (state === 'PR' || state === 'SC') {
-        // Calcula frete baseado no valor total
         let subtotal = 0;
         cart.forEach(item => {
             let itemPrice = item.price;
@@ -922,61 +1412,39 @@ function simulateCepCheck(cep) {
             subtotal += itemPrice * item.quantity;
         });
         
-        console.log('Subtotal calculado:', subtotal);
-        
-        // Frete baseado no estado e valor
         if (subtotal >= 1000) {
             freightValue = 0;
-            showCepMessage(`🎉 Frete grátis para ${state}! CEP ${cep} atendido.`, 'success');
+            showCepMessage(`Frete grátis para ${state}! CEP ${cep} atendido.`, 'success');
         } else {
-            // Frete diferenciado por faixa de CEP dentro do estado
-            if (state === 'PR') {
-                // Região Metropolitana de Curitiba (faixas 80000-83000)
-                if (cepPrefix >= '80000' && cepPrefix <= '83000') {
-                    freightValue = 40.00;
-                    showCepMessage(`🚚 Frete para Curitiba e região: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-                } 
-                // Ponta Grossa e região (faixa 84000)
-                else if (cepPrefix >= '84000' && cepPrefix <= '84999') {
-                    freightValue = 60.00;
-                    showCepMessage(`🚚 Frete para Ponta Grossa/PR: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-                }
-                // Outras regiões do PR
-                else {
-                    freightValue = 80.00;
-                    showCepMessage(`🚚 Frete para ${state}: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-                }
-            } else if (state === 'SC') {
-                // Florianópolis e região (faixa 88000)
-                if (cepPrefix >= '88000' && cepPrefix <= '88999') {
-                    freightValue = 50.00;
-                    showCepMessage(`🚚 Frete para Florianópolis/SC: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-                } else {
-                    freightValue = 90.00;
-                    showCepMessage(`🚚 Frete para ${state}: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
-                }
-            }
+            freightValue = state === 'PR' ? 80.00 : 90.00;
+            showCepMessage(`Frete para ${state}: R$ ${freightValue.toFixed(2).replace('.', ',')}. CEP ${cep} atendido.`, 'success');
         }
-        
-        console.log('Frete calculado:', freightValue);
     } else {
         freightValue = 0;
-        showCepMessage(`❌ Não atendemos este CEP (${cep}). Atendemos apenas Paraná (PR) e Santa Catarina (SC).`, 'error');
+        showCepMessage(`Não atendemos este CEP (${cep}). Atendemos apenas PR e SC.`, 'error');
     }
     
     updateBudgetSummary();
 }
 
-function showCepMessage(message, type = 'info') {
+function showCepMessage(message, type) {
     const cepMessage = document.getElementById('cepMessage');
-    if (cepMessage) {
-        cepMessage.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i> ${message}`;
-        cepMessage.className = `message ${type}`;
+    if (!cepMessage) return;
+    
+    let icon = '';
+    switch(type) {
+        case 'success': icon = 'check-circle'; break;
+        case 'error': icon = 'times-circle'; break;
+        case 'warning': icon = 'exclamation-circle'; break;
+        default: icon = 'info-circle';
     }
+    
+    cepMessage.innerHTML = `<i class="fas fa-${icon} message-icon"></i><div class="message-text">${message}</div>`;
+    cepMessage.className = type;
 }
 
 // ============================================
-// SISTEMA DE ORÇAMENTOS
+// SALVAR ORÇAMENTO
 // ============================================
 
 function saveBudget() {
@@ -987,7 +1455,7 @@ function saveBudget() {
     
     const cepInput = document.getElementById('cep');
     if (!cepInput || !cepInput.value || freightValue === 0) {
-        showMessage('Informe um CEP válido para calcular o frete antes de salvar.', 'error');
+        showMessage('Informe um CEP válido para calcular o frete.', 'error');
         return;
     }
     
@@ -997,7 +1465,6 @@ function saveBudget() {
         return;
     }
     
-    // Calcula totais
     let subtotal = 0;
     const itemsDetails = [];
     
@@ -1020,13 +1487,12 @@ function saveBudget() {
     
     const total = subtotal + freightValue;
     
-    // Cria objeto do orçamento
     const budget = {
         id: Date.now(),
         userId: currentUser.id,
         userName: currentUser.name,
         date: new Date().toLocaleString('pt-BR'),
-        items: [...itemsDetails],
+        items: itemsDetails,
         subtotal: subtotal,
         freight: freightValue,
         total: total,
@@ -1034,18 +1500,14 @@ function saveBudget() {
         status: 'Pendente'
     };
     
-    // Adiciona à lista de orçamentos
     savedBudgets.push(budget);
-    
-    // Salva no localStorage
     saveToLocalStorage();
     
-    // Atualiza exibição no painel admin
-    updateAdminBudgetsList();
+    if (currentUser.isAdmin) {
+        updateAdminBudgetsList();
+    }
     
-    showMessage(`Orçamento salvo com sucesso! Total: R$ ${total.toFixed(2).replace('.', ',')}`, 'success');
-    
-    // Limpa carrinho
+    showMessage(`Orçamento salvo! Total: R$ ${total.toFixed(2).replace('.', ',')}`, 'success');
     clearBudget();
 }
 
@@ -1062,8 +1524,6 @@ function clearBudget() {
     updateCartDisplay();
     updateBudgetSummary();
     renderBudgetItems();
-    
-    showMessage('Orçamento limpo com sucesso.', 'success');
 }
 
 // ============================================
@@ -1079,13 +1539,12 @@ function getAISuggestions() {
         return;
     }
     
-    showMessage('Analisando seu evento e gerando sugestões...', 'info');
+    showMessage('Analisando seu evento...', 'info');
     
-    // Simulação de processamento por IA
     setTimeout(() => {
         const suggestions = generateAISuggestions(eventDescription);
         renderAISuggestions(suggestions, suggestionsContainer);
-        showMessage('Sugestões geradas com sucesso!', 'success');
+        showMessage('Sugestões geradas!', 'success');
     }, 1500);
 }
 
@@ -1093,78 +1552,47 @@ function generateAISuggestions(description) {
     const text = description.toLowerCase();
     let suggestions = [];
     
-    // Análise de palavras-chave
-    if (text.includes('casamento') || text.includes('noivado') || text.includes('bodas')) {
+    if (text.includes('casamento') || text.includes('noivado')) {
         suggestions.push({
             title: "Para Casamentos",
             icon: "fas fa-ring",
             items: [
-                "Cadeira de Madeira Maciça: 1 por convidado (estilo rústico)",
+                "Cadeira de Madeira Maciça: 1 por convidado",
                 "Mesa Redonda 1,5m: 1 para cada 8 convidados",
-                "Biombo Decorativo: 2-3 unidades para divisórias e fotos",
+                "Biombo Decorativo: 2-3 unidades para fotos",
                 "Puff de Couro Sintético: 5-10 unidades para área de descanso"
             ],
             totalGuests: extractNumber(text) || 100,
-            note: "Para casamentos, recomendamos móveis elegantes e confortáveis."
+            note: "Para casamentos, recomendamos móveis elegantes."
         });
     }
     
-    if (text.includes('corporativo') || text.includes('empresa') || text.includes('conferência')) {
+    if (text.includes('corporativo') || text.includes('empresa')) {
         suggestions.push({
             title: "Para Eventos Corporativos",
             icon: "fas fa-briefcase",
             items: [
-                "Cadeira Dobrável Plástico: 1 por participante (prática e fácil transporte)",
-                "Mesa Retangular 2m: Para cabines e estações de trabalho",
-                "Sofá de Canto: 1-2 unidades para área de networking",
-                "Mesa Redonda 1,5m: Para coffee breaks e reuniões"
+                "Cadeira Dobrável Plástico: 1 por participante",
+                "Mesa Retangular 2m: Para cabines de trabalho",
+                "Sofá de Canto: 1-2 unidades para networking",
+                "Mesa Redonda 1,5m: Para coffee breaks"
             ],
             totalGuests: extractNumber(text) || 50,
-            note: "Eventos corporativos exigem mobiliário profissional e funcional."
+            note: "Eventos corporativos exigem mobiliário profissional."
         });
     }
     
-    if (text.includes('aniversário') || text.includes('infantil') || text.includes('criança')) {
-        suggestions.push({
-            title: "Para Festas Infantis",
-            icon: "fas fa-birthday-cake",
-            items: [
-                "Cadeira Dobrável Plástico: 1-2 por criança (leves e coloridas)",
-                "Mesa Redonda 1,5m: Para atividades e lanches",
-                "Puff de Couro Sintético: Para área dos pais",
-                "Barril de Cerveja Decorativo: Para drinks especiais"
-            ],
-            totalGuests: extractNumber(text) || 30,
-            note: "Cores vibrantes e móveis seguros são ideais para festas infantis."
-        });
-    }
-    
-    if (text.includes('externo') || text.includes('jardim') || text.includes('praia') || text.includes('ar livre')) {
-        suggestions.push({
-            title: "Para Eventos ao Ar Livre",
-            icon: "fas fa-umbrella-beach",
-            items: [
-                "Cadeira Dobrável Plástico: Resistente à umidade",
-                "Mesa Redonda 1,5m: Com estrutura estável",
-                "Puff de Couro Sintético: Fácil limpeza",
-                "Biombo Decorativo: Para criar ambientes"
-            ],
-            note: "Recomendamos móveis resistentes às condições climáticas."
-        });
-    }
-    
-    // Sugestão genérica se não identificou tipo específico
     if (suggestions.length === 0) {
         suggestions.push({
             title: "Sugestões Gerais",
             icon: "fas fa-lightbulb",
             items: [
-                "Cadeira de Madeira Maciça: Para eventos formais e elegantes",
-                "Cadeira Dobrável Plástico: Para eventos informais e grandes quantidades",
-                "Mesa Redonda 1,5m: Ideal para refeições em grupo",
-                "Puff de Couro Sintético: Conforto adicional para áreas de descanso"
+                "Cadeira de Madeira Maciça: Para eventos formais",
+                "Cadeira Dobrável Plástico: Para grandes quantidades",
+                "Mesa Redonda 1,5m: Ideal para refeições",
+                "Puff de Couro Sintético: Conforto adicional"
             ],
-            note: "Considere a quantidade de convidados e o estilo do evento."
+            note: "Considere a quantidade de convidados."
         });
     }
     
@@ -1194,31 +1622,24 @@ function renderAISuggestions(suggestions, container) {
         `;
     });
     
-    // Adiciona botão para aplicar sugestões
     suggestionsHTML += `
-        <div style="margin-top: 20px; text-align: center;">
+        <div style="text-align: center; margin-top: 20px;">
             <button id="applySuggestions" class="cta-button">
-                <i class="fas fa-magic"></i> Aplicar Sugestões ao Orçamento
+                <i class="fas fa-magic"></i> Aplicar Sugestões
             </button>
         </div>
     `;
     
     container.innerHTML = suggestionsHTML;
     
-    // Adiciona event listener ao botão
     document.getElementById('applySuggestions').addEventListener('click', function() {
         applyAISuggestions(suggestions);
     });
 }
 
 function applyAISuggestions(suggestions) {
-    // Limpa carrinho atual
     cart = [];
     
-    // Aplica as sugestões da primeira categoria
-    const firstSuggestion = suggestions[0];
-    
-    // Mapeia nomes de produtos para IDs
     const productNameToId = {
         "Cadeira de Madeira Maciça": 1,
         "Mesa Redonda 1,5m": 2,
@@ -1230,34 +1651,30 @@ function applyAISuggestions(suggestions) {
         "Barril de Cerveja Decorativo": 8
     };
     
-    // Processa cada item sugerido
     let addedItems = 0;
     
-    firstSuggestion.items.forEach(itemText => {
+    suggestions[0].items.forEach(itemText => {
         const productName = itemText.split(':')[0].trim();
         const productId = productNameToId[productName];
         
         if (productId) {
             const product = products.find(p => p.id === productId);
             if (product && product.stock > 0) {
-                // Tenta extrair quantidade do texto
                 let quantity = 1;
                 const match = itemText.match(/\d+/g);
                 if (match) {
                     quantity = parseInt(match[0]);
                 }
                 
-                // Se tem estimativa de convidados, ajusta quantidades
-                if (firstSuggestion.totalGuests) {
+                if (suggestions[0].totalGuests) {
                     if (productName.includes("Cadeira")) {
-                        quantity = Math.ceil(firstSuggestion.totalGuests * 1.1); // 10% a mais
+                        quantity = Math.ceil(suggestions[0].totalGuests * 1.1);
                     } else if (productName.includes("Mesa")) {
                         const guestsPerTable = productName.includes("Redonda") ? 8 : 10;
-                        quantity = Math.ceil(firstSuggestion.totalGuests / guestsPerTable);
+                        quantity = Math.ceil(suggestions[0].totalGuests / guestsPerTable);
                     }
                 }
                 
-                // Limita pela quantidade em estoque
                 quantity = Math.min(quantity, product.stock);
                 
                 if (quantity > 0) {
@@ -1274,153 +1691,19 @@ function applyAISuggestions(suggestions) {
         }
     });
     
-    // Atualiza a interface
     updateCartDisplay();
     updateBudgetSummary();
     renderBudgetItems();
     
     if (addedItems > 0) {
-        showMessage(`${addedItems} itens adicionados ao orçamento!`, 'success');
-        // Rola até a seção de orçamento
+        showMessage(`${addedItems} itens adicionados!`, 'success');
         document.getElementById('budget').scrollIntoView({ behavior: 'smooth' });
-    } else {
-        showMessage('Nenhum item pôde ser adicionado ao orçamento.', 'warning');
     }
 }
 
 // ============================================
-// FUNÇÕES DE DETALHES DO PRODUTO
+// PAINEL ADMIN
 // ============================================
-
-function viewProductDetails(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    let detailsHTML = `
-        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-            <div style="flex: 1; text-align: center;">
-                <i class="${product.image}" style="font-size: 80px; color: var(--primary);"></i>
-            </div>
-            <div style="flex: 2;">
-                <h3>${product.name}</h3>
-                <p><strong>Categoria:</strong> ${product.category}</p>
-                <p><strong>Preço unitário:</strong> R$ ${product.price.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Estoque disponível:</strong> ${product.stock} unidades</p>
-            </div>
-        </div>
-    `;
-    
-    if (product.bulkDiscount) {
-        detailsHTML += `
-            <div class="message info">
-                <i class="fas fa-percentage"></i>
-                <strong>Desconto por quantidade:</strong> ${product.bulkDiscount.quantity}+ unidades por R$ ${product.bulkDiscount.price.toFixed(2).replace('.', ',')} cada
-            </div>
-        `;
-    }
-    
-    detailsHTML += `
-        <div class="product-description-full">
-            <h4>Descrição</h4>
-            <p>${product.description}</p>
-        </div>
-    `;
-    
-    // Cria modal de detalhes
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Detalhes do Produto</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                ${detailsHTML}
-                <div style="text-align: center; margin-top: 30px;">
-                    <button class="cta-button add-to-budget-from-modal" data-id="${productId}" style="padding: 12px 30px;">
-                        <i class="fas fa-cart-plus"></i> Adicionar ao Orçamento
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners para o modal
-    const closeBtn = modal.querySelector('.close-modal');
-    const addBtn = modal.querySelector('.add-to-budget-from-modal');
-    
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    addBtn.addEventListener('click', function() {
-        addToBudget(productId);
-        document.body.removeChild(modal);
-    });
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
-    
-    // Fechar com ESC
-    document.addEventListener('keydown', function closeOnEsc(e) {
-        if (e.key === 'Escape') {
-            document.body.removeChild(modal);
-            document.removeEventListener('keydown', closeOnEsc);
-        }
-    });
-}
-
-// ============================================
-// PAINEL ADMINISTRATIVO
-// ============================================
-
-function openAdminModal() {
-    if (!currentUser || !currentUser.isAdmin) {
-        showMessage('Acesso restrito. Faça login como administrador.', 'error');
-        openLoginModal();
-        return;
-    }
-    
-    const adminModal = document.getElementById('adminModal');
-    if (adminModal) {
-        adminModal.style.display = 'block';
-        updateAdminProductsList();
-        updateAdminBudgetsList();
-    }
-}
-
-function closeAdminModal() {
-    const adminModal = document.getElementById('adminModal');
-    if (adminModal) {
-        adminModal.style.display = 'none';
-    }
-}
-
-function switchAdminTab(tabId) {
-    // Atualiza tabs ativas
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-tab') === tabId) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // Atualiza conteúdo das tabs
-    document.querySelectorAll('.admin-tab-content').forEach(content => {
-        content.classList.remove('active');
-        if (content.id === `${tabId}Tab`) {
-            content.classList.add('active');
-        }
-    });
-}
 
 function updateAdminProductsList() {
     const adminProductsList = document.getElementById('adminProductsList');
@@ -1435,20 +1718,20 @@ function updateAdminProductsList() {
     
     products.forEach(product => {
         productsHTML += `
-            <div class="admin-product" data-id="${product.id}">
+            <div class="admin-product">
                 <div class="admin-product-info">
                     <h4>${product.name}</h4>
-                    <p>Estoque: ${product.stock} | Preço: R$ ${product.price.toFixed(2).replace('.', ',')} | Categoria: ${product.category}</p>
+                    <p>Estoque: ${product.stock} | Preço: R$ ${product.price.toFixed(2).replace('.', ',')}</p>
                     ${product.bulkDiscount ? 
                         `<p><small>Desconto: ${product.bulkDiscount.quantity}+ por R$ ${product.bulkDiscount.price.toFixed(2).replace('.', ',')}</small></p>` : 
                         ''
                     }
                 </div>
                 <div class="admin-product-actions">
-                    <button class="btn-small btn-edit edit-product" data-id="${product.id}" title="Editar">
+                    <button class="btn-small btn-edit edit-product-admin" data-id="${product.id}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-small btn-delete delete-product" data-id="${product.id}" title="Excluir">
+                    <button class="btn-small btn-delete delete-product-admin" data-id="${product.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1458,18 +1741,80 @@ function updateAdminProductsList() {
     
     adminProductsList.innerHTML = productsHTML;
     
-    // Adiciona event listeners
-    document.querySelectorAll('.edit-product').forEach(button => {
+    document.querySelectorAll('.edit-product-admin').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
-            editProduct(productId);
+            editProductAdmin(productId);
         });
     });
     
-    document.querySelectorAll('.delete-product').forEach(button => {
+    document.querySelectorAll('.delete-product-admin').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
-            deleteProduct(productId);
+            deleteProductAdmin(productId);
+        });
+    });
+}
+
+function updateAdminBudgetsList() {
+    const budgetsList = document.getElementById('budgetsList');
+    if (!budgetsList) return;
+    
+    if (savedBudgets.length === 0) {
+        budgetsList.innerHTML = '<p class="empty-message">Nenhum orçamento salvo.</p>';
+        return;
+    }
+    
+    let budgetsHTML = '<h3>Todos os Orçamentos</h3>';
+    const sortedBudgets = [...savedBudgets].sort((a, b) => b.id - a.id);
+    
+    sortedBudgets.forEach(budget => {
+        const itemsList = budget.items.map(item => 
+            `${item.quantity}x ${item.name.substring(0, 30)}${item.name.length > 30 ? '...' : ''}`
+        ).join(', ');
+        
+        budgetsHTML += `
+            <div class="budget-item" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;">${budget.date}</p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.9em;"><strong>Cliente:</strong> ${budget.userName}</p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.9em;"><strong>Itens:</strong> ${itemsList}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0 0 5px 0; font-weight: bold; color: #d4af37;">R$ ${budget.total.toFixed(2).replace('.', ',')}</p>
+                        <p style="margin: 0; font-size: 0.9em;">${budget.status}</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn-small view-budget-admin" data-id="${budget.id}" style="padding: 5px 10px; font-size: 0.9em;">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn-small delete-budget-admin" data-id="${budget.id}" style="padding: 5px 10px; font-size: 0.9em; background: #e74c3c;">
+                        <i class="fas fa-trash"></i> Excluir
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    budgetsList.innerHTML = budgetsHTML;
+    
+    document.querySelectorAll('.view-budget-admin').forEach(button => {
+        button.addEventListener('click', function() {
+            const budgetId = parseInt(this.getAttribute('data-id'));
+            closeAdminModal();
+            setTimeout(() => showBudgetDetails(budgetId), 300);
+        });
+    });
+    
+    document.querySelectorAll('.delete-budget-admin').forEach(button => {
+        button.addEventListener('click', function() {
+            const budgetId = parseInt(this.getAttribute('data-id'));
+            if (confirm('Excluir este orçamento?')) {
+                deleteBudget(budgetId);
+                updateAdminBudgetsList();
+            }
         });
     });
 }
@@ -1480,7 +1825,7 @@ function addNewProduct() {
     const newProduct = {
         id: productId,
         name: "Novo Produto",
-        description: "Descrição do novo produto",
+        description: "Descrição do produto",
         price: 0.00,
         stock: 0,
         bulkDiscount: null,
@@ -1493,203 +1838,21 @@ function addNewProduct() {
     updateAdminProductsList();
     renderProducts();
     
-    showMessage('Produto adicionado. Edite as informações conforme necessário.', 'success');
-    
-    // Abre a edição do novo produto
-    setTimeout(() => editProduct(productId), 300);
+    showMessage('Produto adicionado. Edite as informações.', 'success');
 }
 
-function editProduct(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    // Cria formulário de edição
-    const editHTML = `
-        <h3>Editar Produto</h3>
-        <div class="form-group">
-            <label for="editName">Nome do Produto</label>
-            <input type="text" id="editName" value="${product.name}" required>
-        </div>
-        <div class="form-group">
-            <label for="editDescription">Descrição</label>
-            <textarea id="editDescription" rows="3" required>${product.description}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="editPrice">Preço (R$)</label>
-            <input type="number" id="editPrice" step="0.01" min="0" value="${product.price}" required>
-        </div>
-        <div class="form-group">
-            <label for="editStock">Estoque</label>
-            <input type="number" id="editStock" min="0" value="${product.stock}" required>
-        </div>
-        <div class="form-group">
-            <label for="editCategory">Categoria</label>
-            <select id="editCategory">
-                <option value="Cadeiras" ${product.category === 'Cadeiras' ? 'selected' : ''}>Cadeiras</option>
-                <option value="Mesas" ${product.category === 'Mesas' ? 'selected' : ''}>Mesas</option>
-                <option value="Assentos" ${product.category === 'Assentos' ? 'selected' : ''}>Assentos</option>
-                <option value="Decoração" ${product.category === 'Decoração' ? 'selected' : ''}>Decoração</option>
-                <option value="Outros" ${product.category === 'Outros' ? 'selected' : ''}>Outros</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="editIcon">Ícone</label>
-            <select id="editIcon">
-                <option value="fas fa-chair" ${product.image === 'fas fa-chair' ? 'selected' : ''}>Cadeira</option>
-                <option value="fas fa-table" ${product.image === 'fas fa-table' ? 'selected' : ''}>Mesa</option>
-                <option value="fas fa-couch" ${product.image === 'fas fa-couch' ? 'selected' : ''}>Sofá/Puff</option>
-                <option value="fas fa-border-none" ${product.image === 'fas fa-border-none' ? 'selected' : ''}>Biombo</option>
-                <option value="fas fa-wine-bottle" ${product.image === 'fas fa-wine-bottle' ? 'selected' : ''}>Bar/Decoração</option>
-                <option value="fas fa-box" ${product.image === 'fas fa-box' ? 'selected' : ''}>Geral</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="editHasDiscount" ${product.bulkDiscount ? 'checked' : ''}>
-                Oferecer desconto por quantidade
-            </label>
-        </div>
-        <div id="discountFields" style="${product.bulkDiscount ? '' : 'display: none;'}">
-            <div class="form-group">
-                <label for="editDiscountQuantity">Quantidade mínima para desconto</label>
-                <input type="number" id="editDiscountQuantity" min="2" value="${product.bulkDiscount ? product.bulkDiscount.quantity : ''}">
-            </div>
-            <div class="form-group">
-                <label for="editDiscountPrice">Preço com desconto (R$)</label>
-                <input type="number" id="editDiscountPrice" step="0.01" min="0" value="${product.bulkDiscount ? product.bulkDiscount.price : ''}">
-            </div>
-        </div>
-        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 30px;">
-            <button class="cta-button save-product-edit" data-id="${productId}">Salvar Alterações</button>
-            <button class="btn-outline cancel-edit">Cancelar</button>
-        </div>
-    `;
-    
-    // Cria modal de edição
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Editar Produto #${productId}</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                ${editHTML}
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners
-    const closeBtn = modal.querySelector('.close-modal');
-    const cancelBtn = modal.querySelector('.cancel-edit');
-    const saveBtn = modal.querySelector('.save-product-edit');
-    const discountCheckbox = modal.querySelector('#editHasDiscount');
-    
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    cancelBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    // Mostrar/ocultar campos de desconto
-    discountCheckbox.addEventListener('change', function() {
-        const discountFields = modal.querySelector('#discountFields');
-        discountFields.style.display = this.checked ? 'block' : 'none';
-    });
-    
-    // Salvar edição
-    saveBtn.addEventListener('click', function() {
-        const id = parseInt(this.getAttribute('data-id'));
-        const productIndex = products.findIndex(p => p.id === id);
-        
-        if (productIndex === -1) {
-            showMessage('Produto não encontrado.', 'error');
-            return;
-        }
-        
-        // Validações
-        const name = modal.querySelector('#editName').value.trim();
-        const description = modal.querySelector('#editDescription').value.trim();
-        const price = parseFloat(modal.querySelector('#editPrice').value);
-        const stock = parseInt(modal.querySelector('#editStock').value);
-        
-        if (!name || !description) {
-            showMessage('Nome e descrição são obrigatórios.', 'error');
-            return;
-        }
-        
-        if (isNaN(price) || price < 0) {
-            showMessage('Preço inválido.', 'error');
-            return;
-        }
-        
-        if (isNaN(stock) || stock < 0) {
-            showMessage('Estoque inválido.', 'error');
-            return;
-        }
-        
-        // Atualiza produto
-        products[productIndex].name = name;
-        products[productIndex].description = description;
-        products[productIndex].price = price;
-        products[productIndex].stock = stock;
-        products[productIndex].category = modal.querySelector('#editCategory').value;
-        products[productIndex].image = modal.querySelector('#editIcon').value;
-        
-        if (discountCheckbox.checked) {
-            const discountQuantity = parseInt(modal.querySelector('#editDiscountQuantity').value);
-            const discountPrice = parseFloat(modal.querySelector('#editDiscountPrice').value);
-            
-            if (discountQuantity && discountPrice && discountQuantity > 1 && discountPrice > 0) {
-                products[productIndex].bulkDiscount = {
-                    quantity: discountQuantity,
-                    price: discountPrice
-                };
-            } else {
-                products[productIndex].bulkDiscount = null;
-            }
-        } else {
-            products[productIndex].bulkDiscount = null;
-        }
-        
-        saveToLocalStorage();
-        updateAdminProductsList();
-        renderProducts();
-        
-        document.body.removeChild(modal);
-        showMessage('Produto atualizado com sucesso!', 'success');
-    });
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
+function editProductAdmin(productId) {
+    // Implementar edição de produto
+    showMessage('Funcionalidade de edição em desenvolvimento.', 'info');
 }
 
-function deleteProduct(productId) {
-    if (!confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
-        return;
-    }
+function deleteProductAdmin(productId) {
+    if (!confirm('Excluir este produto?')) return;
     
     const productIndex = products.findIndex(p => p.id === productId);
+    if (productIndex === -1) return;
     
-    if (productIndex === -1) {
-        showMessage('Produto não encontrado.', 'error');
-        return;
-    }
-    
-    // Remove do array de produtos
     products.splice(productIndex, 1);
-    
-    // Remove do carrinho se estiver lá
     cart = cart.filter(item => item.id !== productId);
     
     saveToLocalStorage();
@@ -1698,185 +1861,7 @@ function deleteProduct(productId) {
     updateCartDisplay();
     updateBudgetSummary();
     
-    showMessage('Produto excluído com sucesso!', 'success');
-}
-
-function updateAdminBudgetsList() {
-    const budgetsList = document.getElementById('budgetsList');
-    if (!budgetsList) return;
-    
-    if (savedBudgets.length === 0) {
-        budgetsList.innerHTML = '<p class="empty-message">Nenhum orçamento salvo ainda.</p>';
-        return;
-    }
-    
-    let budgetsHTML = '';
-    
-    // Ordena por data (mais recente primeiro)
-    const sortedBudgets = [...savedBudgets].sort((a, b) => b.id - a.id);
-    
-    sortedBudgets.forEach(budget => {
-        // Formata lista de itens
-        const itemsList = budget.items.map(item => 
-            `${item.quantity}x ${item.name.substring(0, 30)}${item.name.length > 30 ? '...' : ''}`
-        ).join(', ');
-        
-        budgetsHTML += `
-            <div class="budget-item">
-                <div class="budget-item-header">
-                    <div>
-                        <span class="budget-item-date">${budget.date}</span>
-                        <p><small>Cliente: ${budget.userName}</small></p>
-                    </div>
-                    <span class="budget-item-total">R$ ${budget.total.toFixed(2).replace('.', ',')}</span>
-                </div>
-                <p><strong>CEP:</strong> ${budget.cep}</p>
-                <p><strong>Itens:</strong> ${itemsList}</p>
-                <p><strong>Status:</strong> 
-                    <span class="budget-status ${budget.status.toLowerCase()}">${budget.status}</span>
-                </p>
-                <div class="budget-item-actions">
-                    <button class="btn-small view-budget" data-id="${budget.id}">
-                        <i class="fas fa-eye"></i> Ver Detalhes
-                    </button>
-                    <button class="btn-small delete-budget" data-id="${budget.id}">
-                        <i class="fas fa-trash"></i> Excluir
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    
-    budgetsList.innerHTML = budgetsHTML;
-    
-    // Adiciona event listeners
-    document.querySelectorAll('.view-budget').forEach(button => {
-        button.addEventListener('click', function() {
-            const budgetId = parseInt(this.getAttribute('data-id'));
-            viewBudgetDetails(budgetId);
-        });
-    });
-    
-    document.querySelectorAll('.delete-budget').forEach(button => {
-        button.addEventListener('click', function() {
-            const budgetId = parseInt(this.getAttribute('data-id'));
-            deleteBudget(budgetId);
-        });
-    });
-}
-
-function viewBudgetDetails(budgetId) {
-    const budget = savedBudgets.find(b => b.id === budgetId);
-    if (!budget) return;
-    
-    // Cria HTML com detalhes
-    let itemsHTML = '';
-    budget.items.forEach((item, index) => {
-        itemsHTML += `
-            <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">${index + 1}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.price.toFixed(2).replace('.', ',')}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.total.toFixed(2).replace('.', ',')}</td>
-            </tr>
-        `;
-    });
-    
-    const detailsHTML = `
-        <h3>Detalhes do Orçamento #${budget.id}</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-            <div>
-                <p><strong>Data:</strong> ${budget.date}</p>
-                <p><strong>Cliente:</strong> ${budget.userName}</p>
-                <p><strong>ID do Cliente:</strong> ${budget.userId}</p>
-            </div>
-            <div>
-                <p><strong>CEP:</strong> ${budget.cep}</p>
-                <p><strong>Status:</strong> <span class="budget-status ${budget.status.toLowerCase()}">${budget.status}</span></p>
-            </div>
-        </div>
-        
-        <h4>Itens do Orçamento</h4>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <thead>
-                    <tr style="background-color: var(--light-gray);">
-                        <th style="padding: 10px; text-align: left;">#</th>
-                        <th style="padding: 10px; text-align: left;">Produto</th>
-                        <th style="padding: 10px; text-align: center;">Quantidade</th>
-                        <th style="padding: 10px; text-align: right;">Preço Unit.</th>
-                        <th style="padding: 10px; text-align: right;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsHTML}
-                </tbody>
-            </table>
-        </div>
-        
-        <div style="text-align: right; font-weight: bold; background-color: var(--light); padding: 20px; border-radius: 8px;">
-            <p style="font-size: 1.1rem;">Subtotal: R$ ${budget.subtotal.toFixed(2).replace('.', ',')}</p>
-            <p style="font-size: 1.1rem;">Frete: R$ ${budget.freight.toFixed(2).replace('.', ',')}</p>
-            <p style="font-size: 1.3rem; color: var(--primary); margin-top: 10px;">Total: R$ ${budget.total.toFixed(2).replace('.', ',')}</p>
-        </div>
-    `;
-    
-    // Cria modal
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h2>Orçamento #${budget.id}</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                ${detailsHTML}
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners
-    const closeBtn = modal.querySelector('.close-modal');
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
-}
-
-function deleteBudget(budgetId) {
-    if (!confirm('Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.')) {
-        return;
-    }
-    
-    const budgetIndex = savedBudgets.findIndex(b => b.id === budgetId);
-    
-    if (budgetIndex === -1) {
-        showMessage('Orçamento não encontrado.', 'error');
-        return;
-    }
-    
-    savedBudgets.splice(budgetIndex, 1);
-    saveToLocalStorage();
-    updateAdminBudgetsList();
-    showMessage('Orçamento excluído com sucesso!', 'success');
-}
-
-function initAdminPanel() {
-    const companyNameInput = document.getElementById('companyName');
-    if (companyNameInput) {
-        companyNameInput.value = companyData.name;
-    }
+    showMessage('Produto excluído!', 'success');
 }
 
 function saveSettings() {
@@ -1884,323 +1869,39 @@ function saveSettings() {
     if (!companyNameInput) return;
     
     const newName = companyNameInput.value.trim();
-    
     if (!newName) {
-        showMessage('O nome da empresa é obrigatório.', 'error', document.getElementById('adminModal'));
+        showMessage('Nome da empresa é obrigatório.', 'error');
         return;
     }
     
     companyData.name = newName;
     saveToLocalStorage();
     
-    // Atualiza no cabeçalho
     const logoText = document.querySelector('.logo-text');
     if (logoText) {
         logoText.textContent = newName.split('-')[0].trim();
     }
     
-    showMessage('Configurações salvas com sucesso!', 'success', document.getElementById('adminModal'));
+    showMessage('Configurações salvas!', 'success');
 }
 
 // ============================================
-// FUNÇÕES DO USUÁRIO (MEUS ORÇAMENTOS E PERFIL)
+// UTILITÁRIOS
 // ============================================
 
-function showMyBudgets() {
-    if (!currentUser) {
-        openLoginModal();
-        return;
-    }
+function showMessage(message, type = 'info') {
+    showCepMessage(message, type);
     
-    // Filtra orçamentos do usuário atual
-    const userBudgets = savedBudgets.filter(budget => budget.userId === currentUser.id);
-    
-    if (userBudgets.length === 0) {
-        showMessage('Você não tem orçamentos salvos.', 'info');
-        return;
-    }
-    
-    // Cria modal com orçamentos do usuário
-    let budgetsHTML = '<h3>Meus Orçamentos</h3>';
-    
-    // Ordena por data (mais recente primeiro)
-    const sortedBudgets = userBudgets.sort((a, b) => b.id - a.id);
-    
-    sortedBudgets.forEach(budget => {
-        const itemsList = budget.items.map(item => 
-            `${item.quantity}x ${item.name.substring(0, 25)}${item.name.length > 25 ? '...' : ''}`
-        ).join(', ');
-        
-        budgetsHTML += `
-            <div class="budget-item">
-                <div class="budget-item-header">
-                    <span class="budget-item-date">${budget.date}</span>
-                    <span class="budget-item-total">R$ ${budget.total.toFixed(2).replace('.', ',')}</span>
-                </div>
-                <p><strong>Itens:</strong> ${itemsList}</p>
-                <p><strong>Status:</strong> ${budget.status}</p>
-                <div class="budget-item-actions">
-                    <button class="btn-small view-my-budget" data-id="${budget.id}">
-                        <i class="fas fa-eye"></i> Ver Detalhes
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Meus Orçamentos</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                ${budgetsHTML}
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners
-    const closeBtn = modal.querySelector('.close-modal');
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    // Ver detalhes dos orçamentos
-    modal.querySelectorAll('.view-my-budget').forEach(button => {
-        button.addEventListener('click', function() {
-            const budgetId = parseInt(this.getAttribute('data-id'));
-            document.body.removeChild(modal);
-            viewBudgetDetails(budgetId);
-        });
-    });
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
-}
-
-function showMyProfile() {
-    if (!currentUser) {
-        openLoginModal();
-        return;
-    }
-    
-    const profileHTML = `
-        <h3>Meu Perfil</h3>
-        <div class="profile-info" style="background-color: var(--light); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <p><strong>Nome:</strong> ${currentUser.name}</p>
-            <p><strong>E-mail:</strong> ${currentUser.email}</p>
-            <p><strong>Tipo de Conta:</strong> ${currentUser.isAdmin ? 'Administrador' : 'Cliente'}</p>
-        </div>
-        ${!currentUser.isAdmin ? `
-        <div class="profile-actions">
-            <button class="btn-secondary" id="changePasswordBtn" style="width: 100%; padding: 12px;">
-                <i class="fas fa-key"></i> Alterar Senha
-            </button>
-        </div>
-        ` : ''}
-    `;
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2>Meu Perfil</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                ${profileHTML}
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners
-    const closeBtn = modal.querySelector('.close-modal');
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    if (!currentUser.isAdmin) {
-        const changePasswordBtn = modal.querySelector('#changePasswordBtn');
-        changePasswordBtn.addEventListener('click', function() {
-            document.body.removeChild(modal);
-            showChangePasswordModal();
-        });
-    }
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
-}
-
-function showChangePasswordModal() {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2>Alterar Senha</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="currentPassword">Senha Atual</label>
-                    <input type="password" id="currentPassword" placeholder="Digite sua senha atual">
-                </div>
-                <div class="form-group">
-                    <label for="newPassword">Nova Senha</label>
-                    <input type="password" id="newPassword" placeholder="Digite a nova senha">
-                </div>
-                <div class="form-group">
-                    <label for="confirmPassword">Confirmar Nova Senha</label>
-                    <input type="password" id="confirmPassword" placeholder="Confirme a nova senha">
-                </div>
-                <div class="form-actions">
-                    <button class="cta-button" id="savePasswordBtn" style="width: 100%; padding: 12px;">
-                        <i class="fas fa-save"></i> Salvar Nova Senha
-                    </button>
-                </div>
-                <p id="passwordMessage" style="text-align: center; margin-top: 15px;"></p>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Event listeners
-    const closeBtn = modal.querySelector('.close-modal');
-    const saveBtn = modal.querySelector('#savePasswordBtn');
-    const passwordMessage = modal.querySelector('#passwordMessage');
-    
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(modal);
-    });
-    
-    saveBtn.addEventListener('click', function() {
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        
-        // Validações
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            passwordMessage.textContent = 'Por favor, preencha todos os campos.';
-            passwordMessage.style.color = 'var(--danger)';
-            return;
-        }
-        
-        if (newPassword !== confirmPassword) {
-            passwordMessage.textContent = 'As senhas não coincidem.';
-            passwordMessage.style.color = 'var(--danger)';
-            return;
-        }
-        
-        if (newPassword.length < 6) {
-            passwordMessage.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
-            passwordMessage.style.color = 'var(--danger)';
-            return;
-        }
-        
-        // Encontra usuário
-        const userIndex = users.findIndex(u => u.id === currentUser.id);
-        
-        if (userIndex === -1) {
-            passwordMessage.textContent = 'Erro ao encontrar usuário.';
-            passwordMessage.style.color = 'var(--danger)';
-            return;
-        }
-        
-        // Verifica senha atual
-        if (users[userIndex].password !== currentPassword) {
-            passwordMessage.textContent = 'Senha atual incorreta.';
-            passwordMessage.style.color = 'var(--danger)';
-            return;
-        }
-        
-        // Atualiza senha
-        users[userIndex].password = newPassword;
-        saveToLocalStorage();
-        
-        document.body.removeChild(modal);
-        showMessage('Senha alterada com sucesso!', 'success');
-    });
-    
-    // Fechar ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.body.removeChild(modal);
-        }
-    });
-}
-
-// ============================================
-// FUNÇÕES AUXILIARES
-// ============================================
-
-function showMessage(message, type = 'info', container = null) {
-    const messageElement = container ? 
-        container.querySelector('.message') || createMessageElement(container) : 
-        createTemporaryMessageElement();
-    
-    messageElement.innerHTML = `<i class="fas fa-${getIconForType(type)}"></i> ${message}`;
-    messageElement.className = `message ${type}`;
-    
-    if (!container) {
+    if (type === 'success') {
         setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
+            const cepMessage = document.getElementById('cepMessage');
+            if (cepMessage) {
+                cepMessage.innerHTML = '';
+                cepMessage.className = '';
             }
         }, 5000);
     }
 }
-
-function getIconForType(type) {
-    switch(type) {
-        case 'success': return 'check-circle';
-        case 'error': return 'times-circle';
-        case 'warning': return 'exclamation-circle';
-        default: return 'info-circle';
-    }
-}
-
-function createTemporaryMessageElement() {
-    const messageElement = document.createElement('div');
-    messageElement.style.position = 'fixed';
-    messageElement.style.top = '20px';
-    messageElement.style.right = '20px';
-    messageElement.style.zIndex = '9999';
-    messageElement.style.maxWidth = '400px';
-    messageElement.style.minWidth = '300px';
-    document.body.appendChild(messageElement);
-    
-    return messageElement;
-}
-
-function createMessageElement(container) {
-    const messageElement = document.createElement('div');
-    container.appendChild(messageElement);
-    return messageElement;
-}
-
-// ============================================
-// LOCAL STORAGE
-// ============================================
 
 function saveToLocalStorage() {
     try {
@@ -2210,93 +1911,31 @@ function saveToLocalStorage() {
             savedBudgets: savedBudgets,
             companyData: companyData
         };
-        
         localStorage.setItem('mobilierData', JSON.stringify(data));
-        console.log('Dados salvos no localStorage');
     } catch (e) {
-        console.error('Erro ao salvar no localStorage:', e);
-        showMessage('Erro ao salvar dados. Tente novamente.', 'error');
+        console.error('Erro ao salvar:', e);
     }
 }
 
 function loadFromLocalStorage() {
     try {
         const savedData = localStorage.getItem('mobilierData');
-        
         if (savedData) {
             const data = JSON.parse(savedData);
-            
             if (data.products) products = data.products;
             if (data.users) users = data.users;
             if (data.savedBudgets) savedBudgets = data.savedBudgets;
             if (data.companyData) Object.assign(companyData, data.companyData);
-            
-            console.log('Dados carregados do localStorage');
         }
     } catch (e) {
-        console.error('Erro ao carregar do localStorage:', e);
-        showMessage('Erro ao carregar dados. Algumas informações podem estar indisponíveis.', 'warning');
+        console.error('Erro ao carregar:', e);
     }
 }
 
 // ============================================
-// INICIALIZAÇÃO FINAL
+// DEBUG
 // ============================================
 
-// Adiciona estilos CSS dinâmicos
-document.head.insertAdjacentHTML('beforeend', `
-    <style>
-        .budget-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .budget-status.pendente {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        
-        .budget-status.aprovado {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .budget-status.cancelado {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .product-description-full {
-            background-color: var(--light);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        
-        .product-description-full h4 {
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-        
-        .product-description-full p {
-            line-height: 1.6;
-            color: var(--gray);
-        }
-    </style>
-`);
-
-// Adiciona tratamento de erros global
-window.addEventListener('error', function(e) {
-    console.error('Erro global:', e.error);
-    showMessage('Ocorreu um erro inesperado. Por favor, recarregue a página.', 'error');
-});
-
-// Adiciona função para exportar dados (para debug)
 window.exportData = function() {
     const data = {
         products: products,
@@ -2315,10 +1954,9 @@ window.exportData = function() {
     a.click();
     URL.revokeObjectURL(url);
     
-    showMessage('Dados exportados com sucesso!', 'success');
+    showMessage('Dados exportados!', 'success');
 };
 
-// Adiciona função para importar dados (para debug)
 window.importData = function() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -2332,7 +1970,7 @@ window.importData = function() {
             try {
                 const data = JSON.parse(e.target.result);
                 
-                if (confirm('Esta ação substituirá todos os dados atuais. Continuar?')) {
+                if (confirm('Substituir todos os dados atuais?')) {
                     products = data.products || products;
                     users = data.users || users;
                     savedBudgets = data.savedBudgets || savedBudgets;
@@ -2342,7 +1980,7 @@ window.importData = function() {
                     location.reload();
                 }
             } catch (error) {
-                showMessage('Erro ao importar dados. Verifique o arquivo.', 'error');
+                showMessage('Erro ao importar.', 'error');
             }
         };
         
@@ -2352,4 +1990,4 @@ window.importData = function() {
     input.click();
 };
 
-console.log('Sistema Mobiliér carregado com sucesso!');
+console.log('Sistema Mobilier carregado!');
